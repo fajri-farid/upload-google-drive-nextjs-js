@@ -1,36 +1,146 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+﻿# Aplikasi Upload Google Drive (Next.js + OAuth2)
 
-## Getting Started
+Aplikasi Next.js untuk upload file peserta ke Google Drive menggunakan OAuth2 refresh token (single uploader account), tanpa login Google di sisi pengguna akhir.
 
-First, run the development server:
+## Kenapa Project Ini
+
+Repository ini ditujukan untuk tim yang butuh alur upload sederhana, dokumentasi setup yang jelas, dan jalur peningkatan menuju production.
+
+Perilaku saat ini:
+- pengguna dapat upload satu atau beberapa file,
+- backend menyimpan file ke Google Drive,
+- aplikasi mengembalikan `submissionId` sebagai bukti upload,
+- aplikasi juga mengembalikan link file agar dapat dibuka oleh peserta.
+
+## Fitur Utama
+
+- Integrasi OAuth2 ke Google Drive API (menghindari kendala kuota service account untuk Drive personal).
+- Upload multi-file dengan validasi tipe MIME dan batas ukuran file.
+- Rate limit dasar pada endpoint upload (proteksi awal anti-abuse).
+- Riwayat submit di localStorage browser (mode dummy/demo).
+- Script bootstrap OAuth untuk generate refresh token dengan cepat.
+
+## Tech Stack
+
+- Next.js 16 (App Router)
+- React 19
+- Google Drive API v3 melalui `googleapis`
+- Tailwind CSS v4
+
+## Mulai Cepat
+
+### 1. Install dependency
+
+```bash
+npm install
+```
+
+### 2. Buat file environment lokal
+
+```bash
+cp .env.example .env.local
+```
+
+Alternatif PowerShell:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+### 3. Isi konfigurasi OAuth di `.env.local`
+
+Nilai wajib:
+- `GOOGLE_OAUTH_CLIENT_ID`
+- `GOOGLE_OAUTH_CLIENT_SECRET`
+- `GOOGLE_OAUTH_REDIRECT_URI`
+
+### 4. Generate refresh token
+
+```bash
+npm run oauth:token
+```
+
+Simpan nilai hasil script ke:
+- `GOOGLE_OAUTH_REFRESH_TOKEN`
+
+### 5. Jalankan aplikasi
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka: `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Variabel utama yang dipakai:
+- `GOOGLE_OAUTH_CLIENT_ID`
+- `GOOGLE_OAUTH_CLIENT_SECRET`
+- `GOOGLE_OAUTH_REDIRECT_URI`
+- `GOOGLE_OAUTH_REFRESH_TOKEN`
+- `GOOGLE_DRIVE_FOLDER_ID` (opsional, bisa ID atau URL folder)
+- `UPLOAD_RATE_LIMIT_WINDOW_MS`
+- `UPLOAD_RATE_LIMIT_MAX_REQUESTS`
 
-## Learn More
+Lihat `.env.example` dan `docs/01-google-cloud-setup.md` untuk panduan lengkap.
 
-To learn more about Next.js, take a look at the following resources:
+## Ringkasan API
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### `POST /api/upload`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Content type: `multipart/form-data`
+- Field utama: `files` (multi-file), fallback `file`
 
-## Deploy on Vercel
+Respons sukses berisi:
+- `success`
+- `uploaded[]` dengan `submissionId`, metadata file, dan link file
+- `failed[]` untuk item yang ditolak/gagal
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Kontrak detail: `docs/02-implementation-guide.md`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Struktur Project
+
+```text
+.
+|-- docs/                        # Kumpulan dokumentasi project
+|-- scripts/
+|   `-- oauth-bootstrap.mjs      # Helper consent OAuth untuk mendapatkan refresh token
+|-- src/
+|   |-- app/
+|   |   |-- api/upload/route.js  # Endpoint API upload
+|   |   |-- layout.js            # Root layout aplikasi
+|   |   `-- page.js              # UI upload + riwayat submit
+|   `-- lib/
+|       |-- google-drive.js      # Inisialisasi OAuth + Drive client
+|       `-- rate-limit.js        # Rate limiter in-memory
+|-- .env.example                 # Template environment variables
+`-- README.md
+```
+
+## Peta Dokumentasi
+
+- `docs/00-tech-stack.md`: ringkasan stack teknis fitur upload.
+- `docs/01-google-cloud-setup.md`: panduan setup Google Cloud dan OAuth (pemula friendly).
+- `docs/02-implementation-guide.md`: arsitektur dan perilaku API.
+- `docs/03-runbook-testing.md`: checklist testing dan troubleshooting.
+- `docs/04-dummy-vs-production-gap.md`: batasan saat ini dan jalur peningkatan ke production.
+
+## Script Tersedia
+
+- `npm run dev`: jalankan development server.
+- `npm run build`: build aplikasi untuk production.
+- `npm run start`: jalankan hasil build production.
+- `npm run lint`: jalankan ESLint.
+- `npm run oauth:token`: generate OAuth refresh token.
+
+## Catatan Keamanan
+
+Baseline saat ini:
+- file di-share sebagai `anyone with link` agar peserta bisa membuka file,
+- endpoint upload memiliki rate limit dasar,
+- `submissionId` dikembalikan sebagai bukti submit.
+
+Untuk data sensitif di production, sangat disarankan:
+- model akses file private,
+- penyimpanan metadata di database server-side,
+- proteksi abuse yang lebih kuat.
