@@ -124,6 +124,7 @@ Kontrak detail: `docs/02-implementation-guide.md`
 - `docs/02-implementation-guide.md`: arsitektur dan perilaku API.
 - `docs/03-runbook-testing.md`: checklist testing dan troubleshooting.
 - `docs/04-dummy-vs-production-gap.md`: batasan saat ini dan jalur peningkatan ke production.
+- `docs/postman/README.md`: pengenalan Postman, cara import collection/env, dan panduan pengujian API upload.
 
 ## Script Tersedia
 

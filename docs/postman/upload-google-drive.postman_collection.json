@@ -1,0 +1,106 @@
+{
+  "info": {
+    "_postman_id": "2f8f4df8-4c5d-4b9a-8f66-ec8a7b0e8a11",
+    "name": "Upload Google Drive API",
+    "description": "Koleksi Postman untuk pengujian endpoint upload file Google Drive. Endpoint target: POST /api/upload.\n\nCatatan penting:\n- Endpoint menerima form-data dengan field `files` (multi file) atau `file` (single fallback).\n- Backend mengembalikan `submissionId`, metadata file, dan link file jika upload berhasil.\n- Endpoint memiliki rate limit dasar.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Upload Files (Multi)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "files",
+              "type": "file",
+              "src": "",
+              "description": "Pilih file dari disk. Untuk multi file, duplikasi key `files` lebih dari satu."
+            }
+          ]
+        },
+        "url": "{{base_url}}{{upload_path}}",
+        "description": "Request utama untuk upload multi-file dengan key `files`."
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code valid (200/400/429)', function () {",
+              "  pm.expect([200, 400, 429]).to.include(pm.response.code);",
+              "});",
+              "",
+              "let jsonData = {};",
+              "try {",
+              "  jsonData = pm.response.json();",
+              "} catch (e) {",
+              "  pm.test('Response harus JSON', function () {",
+              "    pm.expect.fail('Response bukan JSON valid');",
+              "  });",
+              "}",
+              "",
+              "pm.test('Response punya struktur utama', function () {",
+              "  pm.expect(jsonData).to.have.property('success');",
+              "  pm.expect(jsonData).to.have.property('uploaded');",
+              "  pm.expect(jsonData).to.have.property('failed');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Upload Single File (Fallback: file)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "",
+              "description": "Fallback single-file sesuai behavior backend."
+            }
+          ]
+        },
+        "url": "{{base_url}}{{upload_path}}",
+        "description": "Request fallback jika hanya upload satu file dengan key `file`."
+      },
+      "response": []
+    },
+    {
+      "name": "Upload Tanpa File (Negative Case)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": []
+        },
+        "url": "{{base_url}}{{upload_path}}",
+        "description": "Case negatif untuk memastikan backend menolak request tanpa file."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "upload_path",
+      "value": "/api/upload",
+      "type": "string"
+    }
+  ]
+}
